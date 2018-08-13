@@ -8,6 +8,7 @@
 // Maximum length for a word
 // (e.g., pneumonoultramicroscopicsilicovolcanoconiosis)
 #define LENGTH 45
+#define TABLE_SIZE 256*256
 
 // Prototypes
 bool check(const char *word);
