@@ -9,10 +9,10 @@ unsigned long hash(char data[LENGTH + 1])
 {
     int i = 0;
     unsigned long h = 1;
-    /* for(int i=0; data[i]!=NULL || i<LENGTH + 1; i++) */
-    while((data[i]!=10 && data[i]!=0) || i>LENGTH)
+    while(data[i]!=0 || i>LENGTH)
     {
-        h *= data[i];
+        /* h *= data[i]; */
+        h = (h * data[i]) + i;
         /* printf("data[%i]: %i\nh: %d\n\n", i, data[i], h); */
         i++;
     }
@@ -41,7 +41,7 @@ void print_list(node* head)
     while(cursor != NULL)
     {
         /* printf("Value: %i, position in list: %i\n", cursor->data, i); */
-        sprintf(buf, "Position in list: %i\tValue: %s", i, cursor->data);
+        sprintf(buf, "Position in list: %i\tKey: %lu\tValue: %s", i, cursor->key, cursor->data);
         printf("%s\n", buf);
         cursor = cursor->next;
         i++;
@@ -49,11 +49,11 @@ void print_list(node* head)
     printf("Done\n");
 }
 
-node* append(node* head, char data[LENGTH + 1])
+node* append(node* head, unsigned long key, char data[LENGTH + 1])
 {
     if(head == NULL)
     {
-        node* new_node = create(head, data);
+        node* new_node = create(head, key, data);
         head = new_node;
         return head;
     }
@@ -62,13 +62,13 @@ node* append(node* head, char data[LENGTH + 1])
     {
         cursor = cursor->next;
     }
-    node* new_node = create(NULL, data);
+    node* new_node = create(NULL, key, data);
     cursor->next = new_node;
 
     return head;
 }
 
-node* create(node* next, char data[LENGTH + 1])
+node* create(node* next, unsigned long key, char data[LENGTH + 1])
 {
     node* new_node = malloc(sizeof(node));
     if(new_node == NULL)
@@ -77,6 +77,7 @@ node* create(node* next, char data[LENGTH + 1])
         exit(0);
     }
     /* new_node->data = data; */
+    new_node->key = key;
     strcpy(new_node->data, data);
     new_node->next = next;
 
