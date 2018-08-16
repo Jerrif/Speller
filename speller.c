@@ -8,9 +8,7 @@
 #include "dictionary.h"
 
 // Default dictionary
-/* #define DICTIONARY "dictionaries\\large" */
-#define DICTIONARY "dictionaries\\small"
-
+#define DICTIONARY "dictionaries\\large"
 
 int main(int argc, char *argv[])
 {
@@ -97,7 +95,7 @@ int main(int argc, char *argv[])
             // Print word if misspelled
             if (misspelled)
             {
-                printf("%s\n", word);
+                /* printf("%s\n", word); */
                 misspellings++;
             }
 

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
 
 #include "dictionary.h"
@@ -11,25 +12,33 @@
 void print_hash_info(node* h_table[]);
 
 /* node* hash_table[TABLE_SIZE]; */
+node** hash_table;
 
 // Returns true if word is in dictionary else false
 bool check(const char *word)
 {
-    // TODO
-    /* if(!word) // just to shut the compiler up. Delete later */
-    /* { */
-    /*     return true; */
-    /* } */
-    return false;
+    char lower_word[LENGTH + 1];
+    int i = 0;
+
+    do
+    {
+        lower_word[i] = (tolower(word[i]));
+        i++;
+    } while(word[i]!=0);
+
+    lower_word[i] = 0;
+
+    unsigned long key = 0, index = 0;
+    key = hash(lower_word);
+    index = get_index(key);
+
+    return (find_value(hash_table[index], key, lower_word));
+
 }
 
 // Loads dictionary into memory, returning true if successful else false
 bool load(const char *dictionary)
 {
-    struct timeval tv1, tv4;
-    gettimeofday(&tv1, NULL); //start the global timer
-
-
     FILE *dic = fopen(dictionary, "r");
     if (dic == NULL)
     {
@@ -37,29 +46,38 @@ bool load(const char *dictionary)
       return false;
     }
 
-    unsigned long word_count = 0;
+    // Start the hash function timer
+    struct timeval tv1, tv4;
+    gettimeofday(&tv1, NULL);
+
+    unsigned long word_count = 0, key = 0, index = 0;
     char raw_word[LENGTH + 1];
-    unsigned long key = 0;
-    unsigned long index = 0;
 
-    node* hash_table[TABLE_SIZE];
-    /* char* hash_table = malloc(sizeof(node *) * TABLE_SIZE); */
+    // Allocate global memory for the hash table
+    /* node* hash_table[TABLE_SIZE]; */
+    /* hash_table = malloc(sizeof(node) * TABLE_SIZE); */
+    hash_table = calloc(TABLE_SIZE, sizeof(node));
 
-    for(int i=0; i<TABLE_SIZE; i++)
+    if(hash_table == NULL)
     {
-        hash_table[i] = NULL;
+        printf("Unable to allocate memory for dictionary table.\n");
+        return false;
     }
 
+    // Hash each word and add to hash table
     while(fgets(raw_word, LENGTH + 1, dic))
     {
         raw_word[strcspn(raw_word, "\n")] = 0; // Strip the newline off the word
-        key = hash(raw_word);
-        index = get_index(key);
-        /* printf("Hashed: %sKey: %lu\n", raw_word, key); */
-        hash_table[index] = append(hash_table[index], key, raw_word);
-        word_count++;
+        if(raw_word[0] != 0)                   // Don't count empty lines
+        {
+            key = hash(raw_word);
+            index = get_index(key);
+            hash_table[index] = prepend(hash_table[index], key, raw_word); // Prepend is much faster here than append (obviously)
+            word_count++;
+        }
     }
 
+    // Get hash function timing
     gettimeofday(&tv4, NULL);
     double tt = (double) (tv4.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv4.tv_sec - tv1.tv_sec);
 
@@ -74,15 +92,27 @@ bool load(const char *dictionary)
 // Returns number of words in dictionary if loaded else 0 if not yet loaded
 unsigned int size(void)
 {
-    // TODO
-    return 0;
+    unsigned long w_count = 0;
+
+    for(int i=0; i<TABLE_SIZE; i++)
+    {
+        w_count += count_nodes(hash_table[i]);
+    }
+
+    return w_count;
 }
 
 // Unloads dictionary from memory, returning true if successful else false
+// As far as I can tell, there's no way to test if memory has been freed "successfully"
+// So this always returns true
 bool unload(void)
 {
-    /* free(hash_table); */
-    return false;
+    for(int i=0; i<TABLE_SIZE; i++)
+    {
+        free_list(hash_table[i]);
+    }
+    free(hash_table);
+    return true;
 }
 
 unsigned long get_index(unsigned long key)
@@ -90,17 +120,14 @@ unsigned long get_index(unsigned long key)
     return (key % 65535);
 }
 
-void print_hash_info(node* h_table[])
+void print_hash_info(node* h_table[]) // Note: equivalent to (node** h_table)
 {
- 	  unsigned long none = 0;
-    unsigned long used = 0;
-    unsigned long lots = 0;
-		unsigned long total = 0;
+ 	  unsigned long none = 0, used = 0, lots = 0, total = 0;
     unsigned int threshold = 7;
     unsigned int node_count[100] = {0};
     for(int i=0; i<TABLE_SIZE; i++)
     {
-        unsigned int nodes = count_nodes(h_table[i]);
+        unsigned long nodes = count_nodes(h_table[i]);
         if(nodes >= 1)
         {
             node_count[nodes]++;

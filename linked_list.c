@@ -5,7 +5,8 @@
 
 #include "linked_list.h"
 
-unsigned long hash(char data[LENGTH + 1])
+// Hashing "algorithm" I came up with on the spot.
+unsigned long hash(const char* data)
 {
     int i = 0;
     unsigned long h = 1;
@@ -13,17 +14,50 @@ unsigned long hash(char data[LENGTH + 1])
     {
         /* h *= data[i]; */
         h = (h * data[i]) + i;
-        /* printf("data[%i]: %i\nh: %d\n\n", i, data[i], h); */
         i++;
     }
-    /* h = h % 65535; */
     return h;
 }
 
-int count_nodes(node* head)
+bool find_value(node* head, unsigned long key, char* data)
 {
     node* cursor = head;
-    int i = 0;
+
+    while(cursor != NULL)
+    {
+        if(cursor->key == key)
+        {
+            // Remember: strcmp returns 0 if they are equal
+            if(!strcmp(cursor->data, data)) // So, if they ARE equal
+            {
+                return true;
+            }
+        }
+        cursor = cursor->next;
+    }
+
+    return false;
+}
+
+bool free_list(node* head)
+{
+    node* cursor = head;
+    node* temp = NULL;
+
+    while(cursor != NULL)
+    {
+        temp = cursor->next;
+        free(cursor);
+        cursor = temp;
+    }
+
+    return true;
+}
+
+unsigned long count_nodes(node* head)
+{
+    node* cursor = head;
+    unsigned long i = 0;
     while(cursor != NULL)
     {
         cursor = cursor->next;
@@ -37,10 +71,9 @@ void print_list(node* head)
 {
     node* cursor = head;
     int i = 1;
-    char buf[100];
+    char buf[150];
     while(cursor != NULL)
     {
-        /* printf("Value: %i, position in list: %i\n", cursor->data, i); */
         sprintf(buf, "Position in list: %i\tKey: %lu\tValue: %s", i, cursor->key, cursor->data);
         printf("%s\n", buf);
         cursor = cursor->next;
@@ -49,7 +82,14 @@ void print_list(node* head)
     printf("Done\n");
 }
 
-node* append(node* head, unsigned long key, char data[LENGTH + 1])
+node* prepend(node* head, unsigned long key, char* data)
+{
+    node* new_node = create(head, key, data);
+    head = new_node;
+    return head;
+}
+
+node* append(node* head, unsigned long key, char* data)
 {
     if(head == NULL)
     {
@@ -68,7 +108,7 @@ node* append(node* head, unsigned long key, char data[LENGTH + 1])
     return head;
 }
 
-node* create(node* next, unsigned long key, char data[LENGTH + 1])
+node* create(node* next, unsigned long key, char* data)
 {
     node* new_node = malloc(sizeof(node));
     if(new_node == NULL)
